@@ -99,13 +99,27 @@ def get_brightcove_video_id(gyao_video_id: str):
 
 
 def get_brightcove_url(gyao_url: str):
-    if not re.match('https://gyao.yahoo.co.jp/episode/([^/]+/)?[\d\w-]+', gyao_url):
+    while True:
+        m = re.match(r'https://gyao\.yahoo\.co\.jp/episode/(?:[^/]+/)?([\d\w-]+)$', gyao_url)
+        if m:
+            gyao_id = m[1]
+            break
+
+        m = re.match(r'https://gyao.yahoo.co.jp/player/(.+?)/?$', gyao_url)
+        if m:
+            gyao_id = m[1].replace('/', ':')
+            break
+
         print('not a valid gyao url.', file=sys.stderr)
         exit(1)
+
+    print(f'gyao_id : {gyao_id}')
+
     html = requests.get(gyao_url).text
-    gyao_id = re.match(r'https://gyao\.yahoo\.co\.jp/episode/(?:[^/]+/)?([\d\w-]+)$', gyao_url)[1]
     publisher_id = re.search(r'https://players\.brightcove\.net/(\d+)/\w+_default/index\.min\.js', html)[1]
+    print(f'publisher_id : {publisher_id}')
     video_id = get_brightcove_video_id(gyao_id)
+    print(f'video_id : {video_id}')
 
     brightcove_url = f'https://players.brightcove.net/{publisher_id}/default_default/index.html?videoId={video_id}'
     return brightcove_url
